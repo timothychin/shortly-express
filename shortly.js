@@ -28,8 +28,8 @@ app.use(express.static(__dirname + '/public'));
 
 app.use(session({
   secret: 'keyboard cat',
-  resave: true,
-  saveUninitialized: false
+  resave: false,
+  saveUninitialized: true
 }));
 
 var checkUser = function(req, res, next) {
@@ -101,15 +101,12 @@ function(req, res) {
   var password = req.body.password;
 
   new User({ 'username': username }).fetch().then(function(model) {
-    console.log('MODEL', model);
     if (model === null) {
-      res.redirect('login');
+      res.redirect('/login');
       return;
     }
     var pass = model.get('password');
-    console.log('PASS', pass);
     bcrypt.compare(password, pass, function(err, matched) {
-      console.log('MATCHED', matched);
       if (err) { return; }
       if (matched) {
         req.session.regenerate(function() {
@@ -117,7 +114,7 @@ function(req, res) {
           res.redirect('/');
         });
       } else {
-        res.redirect('login');
+        res.redirect('/login');
       }
     });
   });
@@ -135,7 +132,8 @@ function(req, res) {
 
   new User({ 'username': username }).fetch().then(function(found) {
     if (found) {
-      res.render('login');
+      res.setHeader('location', '/');
+      res.redirect('/');
     } else {
       var salt = bcrypt.genSaltSync(10);
       Users.create({
@@ -144,19 +142,22 @@ function(req, res) {
       }).then(function(newUser) {
         // req.session.regenerate(function() {
         req.session.user = username;
-        res.status(201);
-        res.headers.location('/');
+        res.setHeader('location', '/');
         res.redirect('/');
         // });
+      }).catch(function() {
+        res.redirect('/signup');
       });
     }
+  }).catch(function(err) {
+    console.log(err);
   });
 });
 
 app.get('/logout',
 function(req, res) {
   req.session.destroy(function() {
-    res.redirect('login');
+    res.render('login');
   });
 });
 
