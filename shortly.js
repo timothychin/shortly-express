@@ -27,7 +27,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
 app.use(session({
-  secret: 'keyboard cat'
+  secret: 'keyboard cat',
+  resave: true,
+  saveUninitialized: false
 }));
 
 var checkUser = function(req, res, next) {
@@ -101,7 +103,7 @@ function(req, res) {
   new User({ 'username': username }).fetch().then(function(model) {
     console.log('MODEL', model);
     if (model === null) {
-      res.redirect('signup');
+      res.redirect('login');
       return;
     }
     var pass = model.get('password');
@@ -112,7 +114,7 @@ function(req, res) {
       if (matched) {
         req.session.regenerate(function() {
           req.session.user = username;
-          res.redirect('index');
+          res.redirect('/');
         });
       } else {
         res.redirect('login');
@@ -140,10 +142,12 @@ function(req, res) {
         username: username,
         password: bcrypt.hashSync(password, salt)
       }).then(function(newUser) {
-        req.session.regenerate(function() {
-          req.session.user = username;
-          res.redirect('/index');
-        });
+        // req.session.regenerate(function() {
+        req.session.user = username;
+        res.status(201);
+        res.headers.location('/');
+        res.redirect('/');
+        // });
       });
     }
   });
