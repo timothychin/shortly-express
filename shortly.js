@@ -135,13 +135,14 @@ function(req, res) {
     if (found) {
       res.render('login');
     } else {
+      var salt = bcrypt.genSaltSync(10);
       Users.create({
         username: username,
-        password: password
+        password: bcrypt.hashSync(password, salt)
       }).then(function(newUser) {
         req.session.regenerate(function() {
           req.session.user = username;
-          res.redirect('index');
+          res.redirect('/index');
         });
       });
     }
